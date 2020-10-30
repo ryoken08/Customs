@@ -18,6 +18,7 @@ function s.initial_effect(c)
 	e2:SetType(EFFECT_TYPE_IGNITION)
 	e2:SetRange(LOCATION_MZONE)
 	e2:SetCountLimit(1,id)
+	e2:SetCost(s.descost)
 	e2:SetCondition(aux.NOT(s.colinkcon))
 	e2:SetTarget(s.destg)
 	e2:SetOperation(s.desop)
@@ -29,6 +30,15 @@ function s.colinkcon(e,tp,eg,ep,ev,re,r,rp,chk)
 	return e:GetHandler():GetMutualLinkedGroupCount()>0
 end
 --Destroy
+function s.descost(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return e:GetHandler():GetAttackAnnouncedCount()==0 end
+	local e1=Effect.CreateEffect(e:GetHandler())
+	e1:SetType(EFFECT_TYPE_SINGLE)
+	e1:SetProperty(EFFECT_FLAG_CANNOT_DISABLE+EFFECT_FLAG_OATH)
+	e1:SetCode(EFFECT_CANNOT_ATTACK)
+	e1:SetReset(RESET_EVENT+RESETS_STANDARD+RESET_PHASE+PHASE_END)
+	e:GetHandler():RegisterEffect(e1)
+end
 function s.destg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
 	if chkc then return chkc:IsLocation(LOCATION_MZONE) and chkc:IsControler(1-tp) end
 	if chk==0 then return Duel.IsExistingTarget(aux.TRUE,tp,0,LOCATION_MZONE,1,nil) end

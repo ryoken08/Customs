@@ -1,95 +1,97 @@
 --MM Yoshida Yuko
---extra material by edo9300
 local s,id=GetID()
 function s.initial_effect(c)
-	--Extra Material
+	--special summon
 	local e1=Effect.CreateEffect(c)
+	e1:SetDescription(aux.Stringid(id,0))
 	e1:SetType(EFFECT_TYPE_FIELD)
+	e1:SetCode(EFFECT_SPSUMMON_PROC)
+	e1:SetProperty(EFFECT_FLAG_UNCOPYABLE+EFFECT_FLAG_SPSUM_PARAM)
 	e1:SetRange(LOCATION_HAND)
-	e1:SetCode(EFFECT_EXTRA_MATERIAL)
-	e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-	e1:SetTargetRange(1,0)
-	e1:SetOperation(s.extracon)
-	e1:SetValue(s.extraval)
+	e1:SetTargetRange(POS_FACEUP_DEFENSE,0)
+	e1:SetCountLimit(1,id,EFFECT_COUNT_CODE_OATH)
+	e1:SetCondition(s.spcon)
+	e1:SetValue(s.spval)
 	c:RegisterEffect(e1)
-	if s.flagmap==nil then
-		s.flagmap={}
-	end
-	if s.flagmap[c]==nil then
-		s.flagmap[c] = {}
-	end
-	--Send to grave
+	--reveal search
 	local e2=Effect.CreateEffect(c)
-	e2:SetDescription(aux.Stringid(id,0))
-	e2:SetCategory(CATEGORY_TOGRAVE+CATEGORY_SEARCH+CATEGORY_TOHAND)
+	e2:SetDescription(aux.Stringid(id,1))
+	e2:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
 	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_O)
 	e2:SetProperty(EFFECT_FLAG_DELAY)
 	e2:SetCode(EVENT_BE_MATERIAL)
 	e2:SetCountLimit(1,id)
-	e2:SetCondition(s.tgcon)
-	e2:SetTarget(s.tgtg)
-	e2:SetOperation(s.tgop)
+	e2:SetCost(s.thcost)
+	e2:SetCondition(s.thcon)
+	e2:SetTarget(s.thtg)
+	e2:SetOperation(s.thop)
 	c:RegisterEffect(e2)
+	--effect gain
+	local e3=Effect.CreateEffect(c)
+	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
+	e3:SetProperty(EFFECT_FLAG_IGNORE_IMMUNE)
+	e3:SetCode(EVENT_BE_MATERIAL)
+	e3:SetCondition(s.immcon)
+	e3:SetOperation(s.immop)
+	c:RegisterEffect(e3)
 end
-s.listed_series={0x280}
---Extra Material
-function s.extrafilter(c,tp)
-	return c:IsLocation(LOCATION_MZONE) and c:IsControler(tp)
+s.listed_series={0x820}
+--special summon
+function s.spcon(e,c)
+	if c==nil then return true end
+	local tp=e:GetHandlerPlayer()
+	local zone=Duel.GetLinkedZone(tp)&0x1f
+	return zone~=0 and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP_DEFENSE,tp,zone)
 end
-function s.extracon(c,e,tp,sg,mg,lc,og,chk)
-	return (sg+mg):Filter(s.extrafilter,nil,e:GetHandlerPlayer()):IsExists(Card.IsSetCard,og,1,0x820) and
-	sg:FilterCount(s.flagcheck,nil)<2
+function s.spval(e,c)
+	return 0,Duel.GetLinkedZone(c:GetControler())&0x1f
 end
-function s.flagcheck(c)
-	return c:GetFlagEffect(id)>0
+--reveal search
+function s.cfilter(c)
+	return c:IsSetCard(0x820) and c:IsMonster() and not c:IsPublic()
 end
-function s.extraval(chk,summon_type,e,...)
-	local c=e:GetHandler()
-	if chk==0 then
-		local tp,sc=...
-		if not summon_type==SUMMON_TYPE_LINK or not sc:IsSetCard(0x820) or Duel.GetFlagEffect(tp,id)>0 then
-			return Group.CreateGroup()
-		else
-			table.insert(s.flagmap[c],c:RegisterFlagEffect(id,0,0,1))
-			return Group.FromCards(c)
-		end
-	elseif chk==1 then
-		local sg,sc,tp=...
-		if summon_type&SUMMON_TYPE_LINK == SUMMON_TYPE_LINK and #sg>0 then
-			Duel.Hint(HINT_CARD,tp,id)
-			Duel.RegisterFlagEffect(tp,id,RESET_PHASE+PHASE_END,0,1)
-		end
-	elseif chk==2 then
-		for _,eff in ipairs(s.flagmap[c]) do
-			eff:Reset()
-		end
-		s.flagmap[c]={}
-	end
+function s.thcost(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_HAND,0,1,nil) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_CONFIRM)
+	local g=Duel.SelectMatchingCard(tp,s.cfilter,tp,LOCATION_HAND,0,1,1,nil)
+	Duel.ConfirmCards(1-tp,g)
+	Duel.ShuffleHand(tp)
 end
---Send to grave
-function s.tgcon(e,tp,eg,ep,ev,re,r,rp)
-	local c=e:GetHandler()
-	e:SetLabel(0)
-	if c:IsPreviousLocation(LOCATION_ONFIELD) then e:SetLabel(1) end
-	return c:IsLocation(LOCATION_GRAVE) and c:IsPreviousLocation(LOCATION_ONFIELD+LOCATION_HAND) and r==REASON_LINK and c:GetReasonCard():IsSetCard(0x820)
+function s.thcon(e,tp,eg,ep,ev,re,r,rp)
+	return r==REASON_LINK 
 end
-function s.tgfilter(c,chk)
-	return c:IsSetCard(0x820) and c:IsLevelAbove(3) and (c:IsAbleToGrave() or (chk==1 and c:IsAbleToHand()))
+function s.thfilter(c)
+	return c:IsSetCard(0x820) and c:IsMonster() and c:IsAbleToHand()
 end
-function s.tgtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.tgfilter,tp,LOCATION_DECK,0,1,nil,e:GetLabel()) end
+function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_HAND,0,1,nil) end
 	Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_DECK)
-	Duel.SetOperationInfo(0,CATEGORY_TOGRAVE,nil,1,tp,LOCATION_DECK)
 end
-function s.tgop(e,tp,eg,ep,ev,re,r,rp)
-	local g=Duel.SelectMatchingCard(tp,s.tgfilter,tp,LOCATION_DECK,0,1,1,nil,e:GetLabel())
+function s.thop(e,tp,eg,ep,ev,re,r,rp)
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
+	local g=Duel.SelectMatchingCard(tp,s.thfilter,tp,LOCATION_DECK,0,1,1,nil)
 	if #g>0 then
-		local tc=g:GetFirst()
-		if e:GetLabel()==1 and tc:IsAbleToHand() and (not tc:IsAbleToGrave() or Duel.SelectYesNo(tp,aux.Stringid(id,1))) then
-			Duel.SendtoHand(tc,nil,REASON_EFFECT)
-			Duel.ConfirmCards(1-tp,tc)
-		else
-			Duel.SendtoGrave(tc,REASON_EFFECT)
-		end
+		Duel.SendtoHand(g,nil,REASON_EFFECT)
+		Duel.ConfirmCards(1-tp,g)
 	end
+end
+--effect gain
+function s.immcon(e,tp,eg,ep,ev,re,r,rp)
+	local rc=e:GetHandler():GetReasonCard()
+	return rc:IsSetCard(0x820) and r==REASON_LINK 
+end
+function s.immop(e,tp,eg,ep,ev,re,r,rp)
+	local c=e:GetHandler()
+	local rc=c:GetReasonCard()
+	local e1=Effect.CreateEffect(c)
+	e1:SetDescription(aux.Stringid(id,2))
+	e1:SetProperty(EFFECT_FLAG_CLIENT_HINT)
+	e1:SetType(EFFECT_TYPE_SINGLE)
+	e1:SetCode(EFFECT_IMMUNE_EFFECT)
+	e1:SetValue(s.efilter)
+	e1:SetReset(RESET_EVENT+RESETS_STANDARD)
+	rc:RegisterEffect(e1)
+end
+function s.efilter(e,te)
+	return te:IsActiveType(TYPE_SPELL)
 end

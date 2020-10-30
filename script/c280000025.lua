@@ -4,7 +4,7 @@ function s.initial_effect(c)
 	--Link Summon
 	c:EnableReviveLimit()
 	Link.AddProcedure(c,aux.FilterBoolFunction(Card.IsSetCard,0x820),2)
-	--Increase ATK
+	--gain ATK
 	local e1=Effect.CreateEffect(c)
 	e1:SetType(EFFECT_TYPE_SINGLE)
 	e1:SetProperty(EFFECT_FLAG_SINGLE_RANGE)
@@ -13,43 +13,40 @@ function s.initial_effect(c)
 	e1:SetCondition(s.colinkcon)
 	e1:SetValue(1000)
 	c:RegisterEffect(e1)
-	--Special Summon if not co-linked
+	--to deck
 	local e2=Effect.CreateEffect(c)
 	e2:SetDescription(aux.Stringid(id,0))
-	e2:SetCategory(CATEGORY_SPECIAL_SUMMON)
+	e2:SetCategory(CATEGORY_TODECK)
 	e2:SetType(EFFECT_TYPE_IGNITION)
 	e2:SetRange(LOCATION_MZONE)
 	e2:SetProperty(EFFECT_FLAG_CARD_TARGET)
 	e2:SetCountLimit(1,id)
+	e2:SetCost(s.tdcost)
 	e2:SetCondition(aux.NOT(s.colinkcon))
-	e2:SetTarget(s.sptg)
-	e2:SetOperation(s.spop)
+	e2:SetTarget(s.tdtg)
+	e2:SetOperation(s.tdop)
 	c:RegisterEffect(e2)
 end
 s.listed_series={0x820}
-s.listed_names={id}
 --Co-Link Con
 function s.colinkcon(e,tp,eg,ep,ev,re,r,rp)
 	return e:GetHandler():GetMutualLinkedGroupCount()>0
 end
---Special Summon
-function s.spfilter(c,e,tp,zone)
-	return c:IsSetCard(0x820) and c:IsType(TYPE_MONSTER) and not c:IsCode(id) 
-		and c:IsCanBeSpecialSummoned(e,0,tp,false,false,POS_FACEUP,tp,zone)
+--to deck
+function s.tdcost(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return Duel.IsExistingMatchingCard(Card.IsDiscardable,tp,LOCATION_HAND,0,1,nil) end
+	Duel.DiscardHand(tp,Card.IsDiscardable,1,1,REASON_COST+REASON_DISCARD)
 end
-function s.sptg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
-	if chk==0 then
-		local zone=e:GetHandler():GetLinkedZone(tp)&0x1f
-		return zone~=0 and Duel.IsExistingMatchingCard(s.spfilter,tp,LOCATION_GRAVE+LOCATION_HAND,0,1,nil,e,tp,zone)
-	end
-	Duel.SetOperationInfo(0,CATEGORY_SPECIAL_SUMMON,nil,1,tp,LOCATION_GRAVE+LOCATION_HAND)
+function s.tdtg(e,tp,eg,ep,ev,re,r,rp,chk,chkc)
+	if chkc then return chkc:IsOnField() and chkc:IsAbleToDeck() end
+	if chk==0 then return Duel.IsExistingTarget(Card.IsAbleToDeck,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,nil) end
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_TODECK)
+	local g=Duel.SelectTarget(tp,Card.IsAbleToDeck,tp,LOCATION_ONFIELD,LOCATION_ONFIELD,1,1,nil)
+	Duel.SetOperationInfo(0,CATEGORY_TODECK,g,1,0,0)
 end
-function s.spop(e,tp,eg,ep,ev,re,r,rp)
-	local zone=e:GetHandler():GetLinkedZone(tp)&0x1f
-	if zone==0 then return end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_SPSUMMON)
-	local g=Duel.SelectMatchingCard(tp,aux.NecroValleyFilter(s.spfilter),tp,LOCATION_GRAVE+LOCATION_HAND,0,1,1,nil,e,tp,zone)
-	if #g>0 then
-		Duel.SpecialSummon(g,0,tp,tp,false,false,POS_FACEUP,zone)
+function s.tdop(e,tp,eg,ep,ev,re,r,rp)
+	local tc=Duel.GetFirstTarget()
+	if tc and tc:IsRelateToEffect(e) then
+		Duel.SendtoDeck(tc,nil,2,REASON_EFFECT)
 	end
 end
