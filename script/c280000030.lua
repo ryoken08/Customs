@@ -49,15 +49,16 @@ end
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	return r==REASON_LINK 
 end
-function s.thfilter1(c)
+function s.thfilter1(c,tp)
+	local code = c:GetCode()
 	return c:IsSetCard(0x820) and c:IsMonster() and c:IsAbleToRemoveAsCost()
-		and Duel.IsExistingMatchingCard(s.thfilter2,tp,LOCATION_DECK,0,1,nil,c:GetAttribute())
+		and Duel.IsExistingMatchingCard(s.thfilter2,tp,LOCATION_DECK,0,1,nil,c:GetAttribute(),code)
 end
-function s.thfilter2(c,att)
-	return c:IsSetCard(0x820) and c:IsMonster() and c:IsAbleToHand()  and c:IsAttribute(att)
+function s.thfilter2(c,att,code)
+	return c:IsSetCard(0x820) and c:IsMonster() and not c:IsCode(code) and c:IsAttribute(att) and c:IsAbleToHand()
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter1,tp,LOCATION_GRAVE,0,1,nil) end
+	if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter1,tp,LOCATION_GRAVE,0,1,nil,tp) end
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_REMOVE)
 	local cg=Duel.SelectMatchingCard(tp,s.thfilter1,tp,LOCATION_GRAVE,0,1,1,nil,tp)
 	Duel.Remove(cg,POS_FACEUP,REASON_COST)
@@ -66,8 +67,9 @@ function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
 end
 function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	local tc=e:GetLabelObject()
+	local code = tc:GetCode()
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-	local g=Duel.SelectMatchingCard(tp,s.thfilter2,tp,LOCATION_DECK,0,1,1,nil,tc:GetAttribute())
+	local g=Duel.SelectMatchingCard(tp,s.thfilter2,tp,LOCATION_DECK,0,1,1,nil,tc:GetAttribute(),code)
 	if #g>0 then
 		Duel.SendtoHand(g,nil,REASON_EFFECT)
 		Duel.ConfirmCards(1-tp,g)
