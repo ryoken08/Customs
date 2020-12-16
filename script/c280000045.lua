@@ -30,8 +30,8 @@ function s.initial_effect(c)
 	e3:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_CONTINUOUS)
 	e3:SetProperty(EFFECT_FLAG_IGNORE_IMMUNE)
 	e3:SetCode(EVENT_BE_MATERIAL)
-	e3:SetCondition(s.immcon)
-	e3:SetOperation(s.immop)
+	e3:SetCondition(s.indcon)
+	e3:SetOperation(s.indop)
 	c:RegisterEffect(e3)
 end
 s.listed_series={0x820}
@@ -67,18 +67,18 @@ function s.spop2(e,tp,eg,ep,ev,re,r,rp)
 	end
 end
 --effect gain
-function s.immcon(e,tp,eg,ep,ev,re,r,rp)
+function s.indcon(e,tp,eg,ep,ev,re,r,rp)
 	local rc=e:GetHandler():GetReasonCard()
 	return rc:IsSetCard(0x820) and r==REASON_LINK 
 end
-function s.immop(e,tp,eg,ep,ev,re,r,rp)
+function s.indop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
 	local rc=c:GetReasonCard()
 	local e1=Effect.CreateEffect(c)
-	e1:SetDescription(aux.Stringid(id,1))
-	e1:SetType(EFFECT_TYPE_SINGLE)
+	e1:SetDescription(3000)
 	e1:SetProperty(EFFECT_FLAG_CLIENT_HINT)
-	e1:SetCode(EFFECT_CANNOT_REMOVE)
+	e1:SetType(EFFECT_TYPE_SINGLE)
+	e1:SetCode(EFFECT_INDESTRUCTABLE_BATTLE)
 	e1:SetValue(1)
 	e1:SetReset(RESET_EVENT+RESETS_STANDARD)
 	rc:RegisterEffect(e1)
