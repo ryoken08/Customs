@@ -77,7 +77,8 @@ function s.thop(e,tp,eg,ep,ev,re,r,rp)
 end
 --effect gain
 function s.indcon(e,tp,eg,ep,ev,re,r,rp)
-	return r==REASON_LINK
+	local rc=e:GetHandler():GetReasonCard()
+	return rc:IsSetCard(0x820) and r==REASON_LINK
 end
 function s.indop(e,tp,eg,ep,ev,re,r,rp)
 	local c=e:GetHandler()
