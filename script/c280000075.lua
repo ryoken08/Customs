@@ -12,6 +12,7 @@ function s.initial_effect(c)
 	e2:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
 	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
 	e2:SetCode(EVENT_SPSUMMON_SUCCESS)
+	e2:SetProperty(EFFECT_FLAG_DELAY)
 	e2:SetRange(LOCATION_SZONE)
 	e2:SetCountLimit(1,id)
 	e2:SetCondition(s.thcon)
@@ -22,7 +23,7 @@ function s.initial_effect(c)
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,1))
 	e3:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH+CATEGORY_HANDES)
-	e3:SetType(EFFECT_TYPE_QUICK_O)
+	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
 	e3:SetCode(EVENT_FREE_CHAIN)
 	e3:SetRange(LOCATION_SZONE)
 	e3:SetCountLimit(1,id+1)
@@ -41,7 +42,7 @@ end
 s.listed_series={0x820}
 --act in hand
 function s.handcon(e)
-	local g=Duel.GetMatchingGroup(Card.IsType,tp,LOCATION_MZONE,0,nil,TYPE_LINK)
+	local g=Duel.GetMatchingGroup(Card.IsType,e:GetHandlerPlayer(),LOCATION_MZONE,0,nil,TYPE_LINK)
 	return g:GetSum(Card.GetLink)>=6
 end
 --search mm monster

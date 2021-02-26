@@ -47,29 +47,37 @@ function s.spval(e,c)
 	return 0,Duel.GetLinkedZone(c:GetControler())&0x1f
 end
 --reveal search
-function s.cfilter(c)
+function s.cfilter(c,tp)
 	return c:IsSetCard(0x820) and c:IsMonster() and not c:IsPublic()
+		and Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_DECK,0,1,nil,c:GetLevel())
 end
 function s.thcost(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_HAND,0,1,nil) end
-	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_CONFIRM)
-	local g=Duel.SelectMatchingCard(tp,s.cfilter,tp,LOCATION_HAND,0,1,1,nil)
-	Duel.ConfirmCards(1-tp,g)
-	Duel.ShuffleHand(tp)
+	e:SetLabel(100)
+	if chk==0 then return true end
 end
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
 	return r==REASON_LINK 
 end
-function s.thfilter(c)
-	return c:IsSetCard(0x820) and c:IsMonster() and c:IsAbleToHand()
+function s.thfilter(c,lv)
+	return c:IsSetCard(0x820) and c:GetLevel()<lv and c:HasLevel() and c:IsAbleToHand()
 end
 function s.thtg(e,tp,eg,ep,ev,re,r,rp,chk)
-	if chk==0 then return Duel.IsExistingMatchingCard(s.thfilter,tp,LOCATION_HAND,0,1,nil) end
+	if chk==0 then
+		if e:GetLabel()~=100 then return false end
+		e:SetLabel(0)
+		return Duel.IsExistingMatchingCard(s.cfilter,tp,LOCATION_HAND,0,1,nil,tp)
+	end
+	e:SetLabel(0)
+	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_CONFIRM)
+	local g=Duel.SelectMatchingCard(tp,s.cfilter,tp,LOCATION_HAND,0,1,1,nil,tp)
+	Duel.ConfirmCards(1-tp,g)
+	Duel.ShuffleHand(tp)
+	e:SetLabel(g:GetFirst():GetLevel())
 	Duel.SetOperationInfo(0,CATEGORY_TOHAND,nil,1,tp,LOCATION_DECK)
 end
 function s.thop(e,tp,eg,ep,ev,re,r,rp)
 	Duel.Hint(HINT_SELECTMSG,tp,HINTMSG_ATOHAND)
-	local g=Duel.SelectMatchingCard(tp,s.thfilter,tp,LOCATION_DECK,0,1,1,nil)
+	local g=Duel.SelectMatchingCard(tp,s.thfilter,tp,LOCATION_DECK,0,1,1,nil,e:GetLabel())
 	if #g>0 then
 		Duel.SendtoHand(g,nil,REASON_EFFECT)
 		Duel.ConfirmCards(1-tp,g)
