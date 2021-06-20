@@ -47,7 +47,8 @@ function s.spval(e,c)
 end
 --special summon (self)
 function s.spcon2(e,tp,eg,ep,ev,re,r,rp)
-	return r==REASON_LINK 
+	local c=e:GetHandler()
+	return r==REASON_LINK and c:IsLocation(LOCATION_GRAVE)
 end
 function s.sptg2(e,tp,eg,ep,ev,re,r,rp,chk)
 	if chk==0 then return Duel.GetLocationCount(tp,LOCATION_MZONE)>0
