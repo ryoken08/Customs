@@ -40,25 +40,4 @@ function s.spop(e,tp,eg,ep,ev,re,r,rp)
 	if tc and tc:IsRelateToEffect(e) then
 		Duel.SpecialSummon(tc,0,tp,tp,false,false,POS_FACEUP)
 	end
-	--cannot normal/special summon
-	local e1=Effect.CreateEffect(e:GetHandler())
-	e1:SetType(EFFECT_TYPE_FIELD)
-	e1:SetProperty(EFFECT_FLAG_PLAYER_TARGET)
-	e1:SetCode(EFFECT_CANNOT_SUMMON)
-	e1:SetTargetRange(1,0)
-	e1:SetTarget(s.sumlimit)
-	e1:SetReset(RESET_PHASE+PHASE_END)
-	Duel.RegisterEffect(e1,tp)
-	local e2=e1:Clone()
-	e2:SetCode(EFFECT_CANNOT_SPECIAL_SUMMON)
-	Duel.RegisterEffect(e2,tp)
-	aux.RegisterClientHint(e:GetHandler(),nil,tp,1,0,aux.Stringid(id,1),nil)
-	--lizard check
-	aux.addTempLizardCheck(e:GetHandler(),tp,s.lizfilter)
-end
-function s.sumlimit(e,c,sump,sumtype,sumpos,targetp)
-	return not c:IsSetCard(0x820)
-end
-function s.lizfilter(e,c)
-	return not c:IsOriginalSetCard(0x820)
 end

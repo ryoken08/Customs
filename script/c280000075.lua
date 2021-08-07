@@ -12,7 +12,6 @@ function s.initial_effect(c)
 	e2:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH)
 	e2:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
 	e2:SetCode(EVENT_SPSUMMON_SUCCESS)
-	e2:SetProperty(EFFECT_FLAG_DELAY)
 	e2:SetRange(LOCATION_SZONE)
 	e2:SetCountLimit(1,id)
 	e2:SetCondition(s.thcon)
@@ -22,7 +21,7 @@ function s.initial_effect(c)
 	--special summon from gy same attribute
 	local e3=Effect.CreateEffect(c)
 	e3:SetDescription(aux.Stringid(id,1))
-	e3:SetCategory(CATEGORY_TOHAND+CATEGORY_SEARCH+CATEGORY_HANDES)
+	e3:SetCategory(CATEGORY_SPECIAL_SUMMON+CATEGORY_HANDES)
 	e3:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_O)
 	e3:SetCode(EVENT_FREE_CHAIN)
 	e3:SetRange(LOCATION_SZONE)
@@ -46,11 +45,18 @@ function s.handcon(e)
 	return g:GetSum(Card.GetLink)>=6
 end
 --search mm monster
-function s.cfilter(c,g)
-	return g:IsContains(c) and c:IsSetCard(0x820)
+function s.cfilter(c,ec)
+	if c:IsLocation(LOCATION_MZONE) then
+		return ec:GetLinkedGroup():IsContains(c) and c:IsSetCard(0x820)
+	else
+		return (ec:GetLinkedZone(c:GetPreviousControler())&(1<<c:GetPreviousSequence()))~=0 and c:IsSetCard(0x820)
+	end
 end
 function s.thcon(e,tp,eg,ep,ev,re,r,rp)
-	return #(eg&Duel.GetLinkedGroup(tp,LOCATION_MZONE,LOCATION_MZONE))>0
+	for tc in aux.Next(Duel.GetMatchingGroup(Card.IsType,tp,LOCATION_MZONE,LOCATION_MZONE,nil,TYPE_LINK)) do
+		if eg:IsExists(s.cfilter,1,nil,tc) then return true end
+	end
+	return false
 end
 function s.thfilter(c)
 	return c:IsSetCard(0x820) and c:IsMonster() and c:IsAbleToHand()
